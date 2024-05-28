@@ -19,7 +19,7 @@
             _OpenAiApi = new OpenAIAPI(_Configuration["OpenAI:Key"]);
         }
 
-        public async void GetChatResponseByOpenAi(string message)
+        public async Task<string> GetChatResponseByOpenAi(string prompt)
         {
             //Model model = new Model("gpt-3.5-turbo");
             //var messages = new List<ChatMessage>
@@ -34,9 +34,10 @@
             var chat = _OpenAiApi.Chat.CreateConversation();
             chat.Model = Model.GPT4_Turbo;
 
-            ChatResult result = await _OpenAiApi.Chat.CreateChatCompletionAsync(message);
-
+            ChatResult result = await _OpenAiApi.Chat.CreateChatCompletionAsync(prompt);
             Console.WriteLine(result);
+
+            return result.Choices?.FirstOrDefault()?.ToString() ?? string.Empty;
         }
     }
 }

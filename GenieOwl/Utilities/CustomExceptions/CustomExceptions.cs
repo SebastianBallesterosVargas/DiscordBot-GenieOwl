@@ -1,4 +1,4 @@
-﻿namespace GenieOwl.Shared
+﻿namespace GenieOwl.Utilities.CustomExceptions
 {
     [Serializable]
     public class CustomExceptions : Exception

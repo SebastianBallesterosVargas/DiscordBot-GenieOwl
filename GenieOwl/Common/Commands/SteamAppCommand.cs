@@ -1,25 +1,21 @@
 ﻿namespace GenieOwl.Common.Commands
 {
-    using Discord;
     using Discord.Commands;
-    using GenieOwl.Common.Services;
-    using GenieOwl.Integrations.Entities;
+    using GenieOwl.Common.Entities;
+    using GenieOwl.Common.Interfaces;
+    using GenieOwl.Utilities.Messages;
     using Microsoft.Extensions.Configuration;
-    using System.Net.Http.Headers;
     
     public class SteamAppCommand : ModuleBase<SocketCommandContext>
     {
         private readonly IConfiguration _Configuration;
 
-        private readonly HttpClient _httpClient;
+        private readonly ISteamService _SteamService;
 
-        public SteamAppCommand(IConfiguration configuration)
+        public SteamAppCommand(IConfiguration configuration, ISteamService steamService)
         {
             _Configuration = configuration;
-
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "DiscordBot");
+            _SteamService = steamService;
         }
 
         /// <summary>
@@ -33,54 +29,23 @@
         {
             if (string.IsNullOrEmpty(gameName))
             {
-                await ReplyAsync("Usage: !game <game name>");
+                await ReplyAsync(CustomMessages.GetMessage(MessagesType.HelpGameCommand));
                 return;
             }
 
             try
             {
-                SteamService steamService = new(_Configuration);
-                    
-                List<SteamApp>? steamAppsResponse = steamService.GetSteamAppsByMatches(gameName);
+                bool result = await _SteamService.GetSteamAppsByMatches(gameName, Context);
 
-                Console.WriteLine(steamAppsResponse);
-
-                //gameName = Uri.EscapeDataString(gameName);
-
-                //var response = await _httpClient.GetStringAsync($"http://api.urbandictionary.com/v0/define?term={gameName}");
-
-                if (steamAppsResponse == null || steamAppsResponse.Count == 0)
+                if (!result)
                 {
-                    await ReplyAsync($"Nothing found for {gameName}");
-                    return;
-                }
-                else
-                {
-                    var appsFounded = string.Join(", ", steamAppsResponse.Select(aplicacion => aplicacion.Name));
-
-                    await ReplyAsync($"Cuál de los siguientes juegos quieres consultar?");
-                    await ReplyAsync(appsFounded);
-                    //await ReplyAsync(new DiscordButtonComponent(ButtonStyle.Primary, "my_button_id", "This is a button!"));
+                    await ReplyAsync(CustomMessages.GetMessage(MessagesType.UnhandledException));
                 }
             }
-            //catch (HttpRequestException)
-            //{
-            //    await ReplyAsync("Error making the request to Urban Dictionary API");
-            //}
             catch (Exception ex)
             {
-                await ReplyAsync($"An error occurred: {ex.Message}");
+                await ReplyAsync(CustomMessages.GetMessage(MessagesType.GenericError, ex.Message));
             }
         }
-    }
-
-    public class UrbanDictionaryResponse
-    {
-        public List<UrbanDictionaryItem>? List { get; set; }
-    }
-
-    public class UrbanDictionaryItem
-    {
-        public string? Definition { get; set; }
     }
 }

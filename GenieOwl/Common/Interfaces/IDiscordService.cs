@@ -4,6 +4,8 @@
     
     public interface IDiscordService
     {
-        //public SteamApp GetSteamApp(string appName);
+        public Task<bool> GetAppsButtons(List<SteamApp> steamApps);
+
+        public Task<bool> GetAppAchivementsButtons(SteamApp steamApp);
     }
 }

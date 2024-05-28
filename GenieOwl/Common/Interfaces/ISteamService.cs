@@ -1,9 +1,9 @@
 ﻿namespace GenieOwl.Common.Interfaces
 {
-    using GenieOwl.Integrations.Entities;
-    
+    using Discord.Commands;
+
     public interface ISteamService
     {
-        public SteamApp? GetSteamAppByName(string appName);
+        public Task<bool> GetSteamAppsByMatches(string appName, SocketCommandContext context);
     }
 }

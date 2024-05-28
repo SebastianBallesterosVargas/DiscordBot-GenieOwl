@@ -1,91 +1,102 @@
 ﻿namespace GenieOwl.Common.Services
 {
+    using Discord.Commands;
     using GenieOwl.Common.Interfaces;
     using GenieOwl.Integrations.Entities;
-    using GenieOwl.Integrations;
-    using Microsoft.Extensions.Configuration;
+    using GenieOwl.Integrations.Interfaces;
+    using GenieOwl.Utilities.Messages;
     using System.Text.RegularExpressions;
     using System.Collections.Generic;
+    using Discord;
+    using Newtonsoft.Json;
+    using Microsoft.VisualBasic;
+    using System.Xml;
 
     public class SteamService : ISteamService
     {
-        private static IConfiguration _Configuration;
+        private static ISteamIntegration _SteamIntegration;
 
-        private readonly SteamIntegration _SteamIntegration;
+        private static DiscordService _DiscordService;
 
-        private readonly List<SteamApp> _SteamApps;
+        private static List<SteamApp> _SteamApps;
 
-        private readonly List<SteamApp> _SteamAppsWithDlcs;
+        private static List<SteamApp> _SteamAppsWithDlcs;
 
-        public SteamService(IConfiguration configuration)
+        public SteamService(ISteamIntegration steamIntegration)
         {
-            _Configuration = configuration;
-            _SteamIntegration = new SteamIntegration(_Configuration);
+            _SteamIntegration = steamIntegration;
 
             _SteamApps = _SteamIntegration.GetApps();
-            _SteamAppsWithDlcs = _SteamIntegration.GetAppsWithDlcs();
+            //this._SteamAppsWithDlcs = this._SteamIntegration.GetAppsWithDlcs();
         }
 
-        public SteamApp? GetSteamAppByName(string appName)
+        public async Task<bool> GetSteamAppsByMatches(string appName, SocketCommandContext context)
         {
-            List<SteamApp> appsMatchesByName;
+            _DiscordService = new DiscordService(context, new OpenAiIntegration());
 
-            if (_SteamApps.Count > 0)
-            {
-                appsMatchesByName = GetAppsMatchesByAppName(appName, _SteamApps);
+            //TODO: Ajustar el método para que DiscordService no sea llamado desde acá, sino desde el controlador
 
-                if (appsMatchesByName.Count > 0)
-                {
-                    return _SteamIntegration.GetAppAchievements(appsMatchesByName.FirstOrDefault());
-                }
-            }
+            //TODO: Serializar entidades para los botones como custom Id, luego deserializarlas en open ai service para obtener los parametros de SteamApp
 
-            if (_SteamAppsWithDlcs.Count > 0)
-            {
-                appsMatchesByName = GetAppsMatchesByAppName(appName, _SteamAppsWithDlcs);
-                
-                if (appsMatchesByName.Count > 0)
-                {
-                    return _SteamIntegration.GetAppAchievements(appsMatchesByName.FirstOrDefault());
-                }
-            }
+            //var entity = new SteamApp { Name = "John", Id = 30 };
+            //var serializedEntity = JsonConvert.SerializeObject(entity);
+            //var button = new ButtonBuilder()
+            //    .WithLabel("My Button")
+            //    .WithCustomId(serializedEntity)
+            //    .Build();
 
-            return null;
+            //var deserializedEntity = JsonConvert.DeserializeObject<SteamApp>(interaction.Data.CustomId);
+
+
+
+
+            List<SteamApp> appsMatches = GetAppsMatchesByAppName(appName, _SteamApps);
+            if (appsMatches.Count == 1)
+                return await GetAppAchievementsButtons(appsMatches.FirstOrDefault());
+
+            if (appsMatches.Count > 1)
+                return await GetAppsButtons(appsMatches);
+
+            List<SteamApp> appsDlcsMatches = GetAppsMatchesByAppName(appName, _SteamAppsWithDlcs);
+            if (appsDlcsMatches.Count == 1)
+                return await GetAppAchievementsButtons(appsDlcsMatches.FirstOrDefault());
+
+            if (appsDlcsMatches.Count > 1)
+                return await GetAppsButtons(appsDlcsMatches);
+
+            throw CustomMessages.ResponseMessageEx(MessagesType.AppNotFound);
         }
 
-        public List<SteamApp> GetSteamAppsByMatches(string appName)
+        private static async Task<bool> GetAppsButtons(List<SteamApp> steamApps)
         {
-            List<SteamApp> steamAppsDlcsMatches = GetAppsMatchesByAppName(appName, _SteamAppsWithDlcs);
+            return await _DiscordService.GetAppsButtons(steamApps);
+        }
 
-            var asd = _SteamIntegration.GetAppAchievements(steamAppsDlcsMatches.FirstOrDefault());
+        private static async Task<bool> GetAppAchievementsButtons(SteamApp steamApp)
+        {
+            SteamApp appAchievements = _SteamIntegration.GetAppAchievements(steamApp);
 
+            if (appAchievements.Achievements != null && appAchievements.Achievements.Count > 0)
+            {
+                return await _DiscordService.GetAppAchivementsButtons(appAchievements);
+            }
 
-            if (steamAppsDlcsMatches.Count > 0)
-                return steamAppsDlcsMatches;
-            
-            List<SteamApp> steamAppsMatches = GetAppsMatchesByAppName(appName, _SteamApps);
-            if (steamAppsMatches.Count > 0)
-                return steamAppsMatches;
-
-            throw new Exception("Game couldn't not be found");
+            throw CustomMessages.ResponseMessageEx(MessagesType.AppNotAchivement, steamApp.Name);
         }
 
         private static List<SteamApp> GetAppsMatchesByAppName(string appName, List<SteamApp> steamApps)
         {
+            string cleanedAppName = Regex.Replace(appName.ToLower(), @"[:;.,_®@-]", "");
+
             return steamApps.Select(app => new
             {
                 SteamApp = app,
-                Matches = Regex.Matches(app.Name?.ToLower(), $@"\b{Regex.Escape(appName.ToLower())}\b").Count
+                Matches = Regex.Matches(Regex.Replace(app.Name?.ToLower(), @"[:;.,_®@-]", ""), $@"\b{Regex.Escape(appName.ToLower())}\b").Count
             })
             .Where(x => x.Matches > 0)
             .OrderByDescending(x => x.Matches)
             .Select(x => x.SteamApp)
             .ToList();
-        }
-
-        private static string ReplaceSpecialCharacters(string input)
-        {
-            return Regex.Replace(input, @"[^\w\s]", "");
         }
     }
 }

@@ -1,15 +1,13 @@
 ﻿namespace GenieOwl.Integrations
 {
-    using GenieOwl.Integrations.Interfaces;
-    using Discord.WebSocket;
-    using Discord.Commands;
     using Discord;
+    using Discord.Commands;
+    using Discord.WebSocket;
+    using GenieOwl.Integrations.Interfaces;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using System.Threading.Tasks;
     using System.Reflection;
-    using SteamKit2.CDN;
-    using System.ComponentModel;
 
     public class DiscordIntegration : IDiscordIntegration
     {
@@ -32,11 +30,6 @@
             _Commands = new CommandService();
         }
 
-        public void AddButtonExecutedToDiscordClient(Func<SocketMessageComponent, Task> actionButton)
-        {
-            _DiscordClient.ButtonExecuted += actionButton;
-        }
-
         public async Task StartAsync(ServiceProvider services)
         {
             _ServiceProvider = services;
@@ -46,7 +39,7 @@
             await _DiscordClient.LoginAsync(TokenType.Bot, _Configuration["Discord:Token"]);
             await _DiscordClient.StartAsync();
 
-            _DiscordClient.MessageReceived += HandleCommandAsync;
+            _DiscordClient.MessageReceived += this.HandleCommandAsync;
         }
 
         public async Task StopAsync()

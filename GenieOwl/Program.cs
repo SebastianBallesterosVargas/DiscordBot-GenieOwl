@@ -1,12 +1,12 @@
 ﻿namespace GenieOwl
 {
     using System.Reflection;
-    using GenieOwl.Integrations.Interfaces;
+    using GenieOwl.Common.Services;
+    using GenieOwl.Common.Interfaces;
     using GenieOwl.Integrations;
+    using GenieOwl.Integrations.Interfaces;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
-    using GenieOwl.Common.Interfaces;
-    using GenieOwl.Common.Services;
 
     public class Program
     {
@@ -23,7 +23,9 @@
             var serviceProvider = new ServiceCollection()
                 .AddSingleton<IConfiguration>(configuration)
                 .AddScoped<IDiscordIntegration, DiscordIntegration>()
-                .AddScoped<IDiscordService, DiscordService>()
+                .AddScoped<ISteamIntegration, SteamIntegration>()
+                .AddScoped<IOpenAiIntegration, OpenAiIntegration>()
+                .AddScoped<ISteamService, SteamService>()
                 .BuildServiceProvider();
 
             try
@@ -47,9 +49,9 @@
                     }
                 } while (true);
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
-                Console.WriteLine(exception.Message);
+                Console.WriteLine(ex.Message);
                 Environment.Exit(-1);
             }
         }

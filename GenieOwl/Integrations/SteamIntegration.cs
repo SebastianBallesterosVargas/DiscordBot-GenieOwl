@@ -144,11 +144,11 @@
             {
                 var appAchievement = new SteamAppAchievement
                 {
-                    Name = achievement["name"].ToString(),
-                    DisplayName = achievement["displayName"].ToString(),
-                    Description = achievement["description"].ToString(),
-                    Icon = achievement["icon"].ToString(),
-                    IconGray = achievement["iconGray"].ToString(),
+                    Id = achievement["name"].Value,
+                    DisplayName = achievement["displayName"].Value,
+                    Description = achievement["description"].Value,
+                    Icon = achievement["icon"].Value,
+                    IconGray = achievement["iconGray"].Value,
                     Hidden = achievement["hidden"].AsBoolean()
                 };
 
