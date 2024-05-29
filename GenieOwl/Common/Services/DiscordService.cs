@@ -7,6 +7,9 @@
     using GenieOwl.Integrations.Entities;
     using GenieOwl.Utilities;
     using GenieOwl.Utilities.Messages;
+    using Microsoft.VisualBasic;
+    using Newtonsoft.Json;
+    using SteamKit2;
     using System.Drawing;
 
     public class DiscordService : IDiscordService
@@ -18,7 +21,7 @@
         private static SocketCommandContext _Context;
 
         private static List<ButtonBuilder> _ButtonsBuilder;
-        
+
         private static string _AppName;
 
         private static int _Page = 0;
@@ -34,27 +37,26 @@
         private const string _IdNextPage = "next_page";
 
         private const int _BlankSpaceForPixelWidth = 11;
-        
+
         private const int _MaxLongForPixelWidth = 187;
 
         private const int _MaxCountForPage = 20;
 
-        public DiscordService(SocketCommandContext context, IOpenAiService openAiService)
+        public DiscordService(IOpenAiService openAiService)
         {
-            _Context = context;
             _OpenAiService = openAiService;
         }
 
-        public async Task<bool> GetAppsButtons(List<SteamApp> steamApps)
+        public async Task<bool> GetAppsButtons(List<SteamApp> steamApps, SocketCommandContext context)
         {
-            ResetComponentValues();
+            InitializeComponentValues(context);
 
             foreach (SteamApp app in steamApps)
             {
                 var interactiveButton = new ButtonBuilder()
+                    .WithCustomId(GetSerializedId(app))
                     .WithLabel(GetAppDisplayName(app.Name))
-                    .WithStyle(ButtonStyle.Secondary)
-                    .WithCustomId($"{app.Id}-{EntityType.Application}");
+                    .WithStyle(ButtonStyle.Secondary);
 
                 _ButtonsBuilder.Add(interactiveButton);
             }
@@ -65,18 +67,18 @@
             return _MessageWasSent;
         }
 
-        public async Task<bool> GetAppAchivementsButtons(SteamApp steamApp)
+        public async Task<bool> GetAppAchivementsButtons(SteamApp steamApp, SocketCommandContext context)
         {
-            ResetComponentValues();
+            InitializeComponentValues(context);
 
             if (steamApp.Achievements != null && steamApp.Achievements.Count > 0)
             {
                 foreach (SteamAppAchievement appAchievement in steamApp.Achievements.OrderBy(app => !app.Hidden))
                 {
                     var interactiveButton = new ButtonBuilder()
+                        .WithCustomId(GetSerializedId(appAchievement))
                         .WithLabel(GetAppDisplayName(appAchievement.DisplayName, appAchievement.Hidden))
-                        .WithStyle(ButtonStyle.Secondary)
-                        .WithCustomId($"{steamApp.Id}_{appAchievement.Id}-{EntityType.Achivement}");
+                        .WithStyle(ButtonStyle.Secondary);
 
                     _ButtonsBuilder.Add(interactiveButton);
                 }
@@ -88,12 +90,18 @@
             return _MessageWasSent;
         }
 
-        private static void ResetComponentValues()
+        private static void InitializeComponentValues(SocketCommandContext context)
         {
+            _Context = context;
             _ButtonsBuilder = new List<ButtonBuilder>();
             _AppName = string.Empty;
             _Page = 0;
             _MessageWasSent = false;
+        }
+
+        private static string GetSerializedId<T>(T entity)
+        {
+            return JsonConvert.SerializeObject(entity);
         }
 
         private async Task CreateUserMessage()
@@ -168,7 +176,7 @@
                     _Page++;
                     break;
                 default:
-                    await GetResponseForButtonsEvent(buttonInteraction);
+                    await HandleButtonOption(buttonInteraction);
                     break;
 
             }
@@ -180,37 +188,30 @@
             });
         }
 
-        private static async Task GetResponseForButtonsEvent(SocketMessageComponent buttonInteraction)
+        private static async Task HandleButtonOption(SocketMessageComponent buttonInteraction)
         {
             if (buttonInteraction != null && buttonInteraction.Data.CustomId != null)
             {
-                string customId = buttonInteraction.Data.CustomId;
-                int index = customId.IndexOf("-");
+                object? deserializedTEntity = JsonConvert.DeserializeObject<object>(buttonInteraction.Data.CustomId);
+                string openAiResponse = string.Empty;
 
-                if (index != -1)
+
+                if (deserializedTEntity is SteamApp steamApp)
                 {
-                    try
-                    {
-                        string id = customId.Substring(0, index);
-                        string entityType = customId.Substring(id.Length + 1, customId.Length - id.Length);
-
-
-                        if (entityType == EntityType.Achivement.ToString())
-                        {
-                            _Apps
-
-                            _OpenAiService.GetChatResponse();
-                        }
-
-
-                        await buttonInteraction.RespondAsync($"ID: {id} Type: {entityType}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-                    
+                    openAiResponse = await _OpenAiService.GetChatResponse(steamApp);
                 }
+                            
+                if (deserializedTEntity is SteamAppAchievement steamAppAchievement)
+                {
+                    openAiResponse = await _OpenAiService.GetChatResponse(steamAppAchievement);
+                }
+
+                if (string.IsNullOrEmpty(openAiResponse))
+                {
+                    throw CustomMessages.ResponseMessageEx(MessagesType.OpenAiError);
+                }
+
+                await buttonInteraction.RespondAsync(openAiResponse);
             }
         }
 

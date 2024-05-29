@@ -9,6 +9,7 @@
         GenericError,
         HelpGameCommand,
         OwlReady,
+        OpenAiError,
         NextPage,
         PreviousPage,
         PlaceHolderSelectMenu,

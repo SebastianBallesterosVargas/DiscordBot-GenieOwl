@@ -95,7 +95,7 @@
                 Id = steamApp.Id,
                 Name = appSchemaResponse["gameName"].Value,
                 AppVersion = appSchemaResponse["gameVersion"].AsInteger(),
-                Achievements = GetAchievementsForApp(appSchemaResponse)
+                Achievements = GetAchievementsForApp(appSchemaResponse, steamApp.Id)
             };
         }
 
@@ -136,7 +136,7 @@
         /// </summary>
         /// <param name="appSchema">Respuesta con detalle de logros por aplicación</param>
         /// <returns>Retorna el mapeo de los logros de la aplicación</returns>
-        private static List<SteamAppAchievement> GetAchievementsForApp(KeyValue appSchema)
+        private static List<SteamAppAchievement> GetAchievementsForApp(KeyValue appSchema, int steamAppId)
         {
             var appAchievements = new List<SteamAppAchievement>();
 
@@ -149,7 +149,8 @@
                     Description = achievement["description"].Value,
                     Icon = achievement["icon"].Value,
                     IconGray = achievement["iconGray"].Value,
-                    Hidden = achievement["hidden"].AsBoolean()
+                    Hidden = achievement["hidden"].AsBoolean(),
+                    SteamAppId = steamAppId
                 };
 
                 appAchievements.Add(appAchievement);

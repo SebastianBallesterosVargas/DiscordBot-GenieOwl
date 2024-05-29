@@ -11,6 +11,7 @@
             { MessagesType.GenericError, "An error occurred, please report the bug on the GenieOwl forum. :slightly_smiling_face: \b _{0}_" },
             { MessagesType.HelpGameCommand, "You could use: !game <game name>" },
             { MessagesType.OwlReady, "GenieOwl is ready!" },
+            { MessagesType.OpenAiError, "An error occurred with the OpenAi service." },
             { MessagesType.NextPage, "Next page" },
             { MessagesType.PreviousPage, "Previous page" },
             { MessagesType.PlaceHolderSelectMenu, "Select an achievement" },

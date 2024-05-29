@@ -7,6 +7,7 @@
     using GenieOwl.Integrations.Interfaces;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using GenieOwl.Integrations.Entities;
 
     public class Program
     {
@@ -25,8 +26,15 @@
                 .AddScoped<IDiscordIntegration, DiscordIntegration>()
                 .AddScoped<ISteamIntegration, SteamIntegration>()
                 .AddScoped<IOpenAiIntegration, OpenAiIntegration>()
+                .AddScoped<IDiscordService, DiscordService>()
                 .AddScoped<ISteamService, SteamService>()
+                .AddScoped<IOpenAiService, OpenAiService>()
                 .BuildServiceProvider();
+
+            var inter = new OpenAiIntegration(configuration);
+
+            var openAi = new OpenAiService(inter);
+            openAi.GetChatResponse(new SteamApp());
 
             try
             {
