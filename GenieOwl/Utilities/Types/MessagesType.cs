@@ -1,4 +1,4 @@
-﻿namespace GenieOwl.Utilities.Messages
+﻿namespace GenieOwl.Utilities.Types
 {
     public enum MessagesType
     {
@@ -7,19 +7,14 @@
         AppsFound,
         AchievementsFound,
         GenericError,
+        GetMomment,
         HelpGameCommand,
         OwlReady,
-        OpenAiError,
+        PerplexityError,
         NextPage,
+        NotSteamApps,
         PreviousPage,
         PlaceHolderSelectMenu,
         UnhandledException
-    }
-
-    public enum EmoteType
-    {
-        LeftArrow,
-        RightArrow,
-        HiddenEye
     }
 }

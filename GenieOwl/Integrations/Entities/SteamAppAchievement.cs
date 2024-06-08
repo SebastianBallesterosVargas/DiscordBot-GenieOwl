@@ -8,6 +8,5 @@
         public string? Icon { get; set; }
         public string? IconGray { get; set; }
         public bool Hidden { get; set; }
-        public int SteamAppId { get; set; }
     }
 }

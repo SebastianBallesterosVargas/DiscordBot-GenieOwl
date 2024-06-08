@@ -6,6 +6,7 @@
     using GenieOwl.Utilities.Messages;
     using System.Text.RegularExpressions;
     using System.Collections.Generic;
+    using GenieOwl.Utilities.Types;
 
     public class SteamService : ISteamService
     {
@@ -28,8 +29,8 @@
         {
             _SteamIntegration = steamIntegration;
 
-            //_SteamApps = _SteamIntegration.GetApps();
-            //this._SteamAppsWithDlcs = this._SteamIntegration.GetAppsWithDlcs();
+            _SteamApps = _SteamIntegration.GetApps();
+            //_SteamAppsWithDlcs = this._SteamIntegration.GetAppsWithDlcs();
         }
 
         /// <summary>
@@ -37,16 +38,16 @@
         /// </summary>
         /// <param name="appName">Nombre de la búsqueda</param>
         /// <returns>Aplicaciones de Steam</returns>
-        public List<SteamApp> GetSteamAppsByMatches(string appName)
+        public List<SteamApp> GetSteamAppsByMatches(string appName, bool isBotMessage)
         {
-            List<SteamApp> appsMatches = GetAppsMatchesByAppName(appName, _SteamApps);
+            List<SteamApp> appsMatches = GetAppsMatchesByAppName(appName, _SteamApps, isBotMessage);
             if (appsMatches.Count == 1)
                 return GetAchievementsForSteamApp(appsMatches.FirstOrDefault());
 
             if (appsMatches.Count > 1)
                 return appsMatches;
 
-            List<SteamApp> appsDlcsMatches = GetAppsMatchesByAppName(appName, _SteamAppsWithDlcs);
+            List<SteamApp> appsDlcsMatches = GetAppsMatchesByAppName(appName, _SteamAppsWithDlcs, isBotMessage);
             if (appsDlcsMatches.Count == 1)
                 return GetAchievementsForSteamApp(appsDlcsMatches.FirstOrDefault());
 
@@ -80,19 +81,31 @@
         /// <param name="appName">Nombre de la aplicación buscada</param>
         /// <param name="steamApps">Aplicaciones de Steam a buscar</param>
         /// <returns>Coincidencias por nombre de aplicación</returns>
-        private static List<SteamApp> GetAppsMatchesByAppName(string appName, List<SteamApp> steamApps)
+        private static List<SteamApp> GetAppsMatchesByAppName(string appName, List<SteamApp> steamApps, bool isBotMessage)
         {
-            string cleanedAppName = Regex.Replace(appName.ToLower(), @"[:;.,_®@-]", "");
-
-            return steamApps.Select(app => new
+            if (steamApps == null || steamApps.Count == 0)
             {
-                SteamApp = app,
-                Matches = Regex.Matches(Regex.Replace(app.Name?.ToLower(), @"[:;.,_®@-]", ""), $@"\b{Regex.Escape(appName.ToLower())}\b").Count
-            })
-            .Where(x => x.Matches > 0)
-            .OrderByDescending(x => x.Matches)
-            .Select(x => x.SteamApp)
-            .ToList();
+                throw CustomMessages.ResponseMessageEx(MessagesType.NotSteamApps);
+            }
+
+            if (isBotMessage)
+            {
+                return steamApps.Where(app => app.Name == appName).ToList();
+            }
+            else
+            {
+                string cleanedAppName = Regex.Replace(appName.ToLower(), @"[':;.,_®@-]", "");
+
+                return steamApps.Select(app => new
+                {
+                    SteamApp = app,
+                    Matches = Regex.Matches(Regex.Replace(app.Name?.ToLower(), @"[':;.,_®@-]", ""), $@"\b{Regex.Escape(cleanedAppName)}\b").Count
+                })
+                .Where(x => x.Matches > 0)
+                .OrderByDescending(x => x.Matches)
+                .Select(x => x.SteamApp)
+                .ToList();
+            }
         }
     }
 }

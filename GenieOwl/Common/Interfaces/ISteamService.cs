@@ -4,6 +4,6 @@
 
     public interface ISteamService
     {
-        public List<SteamApp> GetSteamAppsByMatches(string appName);
+        public List<SteamApp> GetSteamAppsByMatches(string appName, bool isBotMessage);
     }
 }

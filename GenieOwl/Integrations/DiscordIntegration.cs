@@ -21,13 +21,16 @@
 
         private static readonly DiscordSocketConfig _DiscordConfig = new() { GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent };
 
-        public DiscordIntegration() { }
-
         public DiscordIntegration(IConfiguration configuration)
         {
             _Configuration = configuration;
             _DiscordClient = new DiscordSocketClient(_DiscordConfig);
             _Commands = new CommandService();
+        }
+
+        public DiscordSocketClient GetDiscordClient()
+        {
+            return _DiscordClient;
         }
 
         public async Task StartAsync(ServiceProvider services)
@@ -53,7 +56,7 @@
             int position = 0;
             var userMessage = (SocketUserMessage)arg;
 
-            if (MessageIsUserCommand(userMessage, ref position))
+            if (MessageIsCommand(userMessage, ref position))
             {
                 await _Commands.ExecuteAsync(
                     new SocketCommandContext(_DiscordClient, userMessage),
@@ -62,12 +65,11 @@
             }
         }
 
-        private bool MessageIsUserCommand(SocketUserMessage userMessage, ref int position)
+        private bool MessageIsCommand(SocketUserMessage userMessage, ref int position)
         {
             return userMessage != null &&
                 userMessage.HasStringPrefix(_Configuration["Discord:CommandPrefix"], ref position) &&
-                !userMessage.HasMentionPrefix(_DiscordClient.CurrentUser, ref position) &&
-                !userMessage.Author.IsBot;
+                !userMessage.HasMentionPrefix(_DiscordClient.CurrentUser, ref position);
         }
     }
 }
