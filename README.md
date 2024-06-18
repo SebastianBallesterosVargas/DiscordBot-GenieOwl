@@ -1,6 +1,6 @@
 ![banner](https://github.com/SebastianBallesterosVargas/DiscordGenieOwl/assets/166555946/8ae6aa18-81b0-48ce-8944-1500d980fc21)
 
-### ◯ **.NET Discord Bot Sample Integrated To SteamAPI And Perplexity GPT**
+##### ◯ **.NET Discord Bot Sample Integrated To SteamAPI And Perplexity GPT**
 
 This bot is built using Discord.Net allows querying a Steam game or application and using GPT to obtain a guide for any selected achievement.
 It makes use of the Perplexity API to search for guides on the web and generate a summary of the guide.
