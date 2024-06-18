@@ -3,138 +3,83 @@
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+    using GenieOwl.Common.Entities;
     using GenieOwl.Common.Interfaces;
-    using GenieOwl.Integrations.Entities;
     using GenieOwl.Integrations.Interfaces;
     using GenieOwl.Utilities.Messages;
     using GenieOwl.Utilities.Types;
     using Newtonsoft.Json;
-    using SteamKit2;
-    using System.Drawing;
 
     public class DiscordService : IDiscordService
     {
+        /// <summary>
+        /// Mensaje incial para las opciones de usuario
+        /// </summary>
         private static IMessage _InstanceUserMessage;
 
+        /// <summary>
+        /// Servicio de perplexity para la respuesta final del bot
+        /// </summary>
         private static IPerplexityService _PerplexityService;
 
-        private static SocketCommandContext _Context;
-
-        private static List<ButtonBuilder> _ButtonsBuilder;
-
+        /// <summary>
+        /// Idioma de la respuesta
+        /// </summary>
         private static LenguageType _Lenguage = LenguageType.English;
 
-        private static string _AppName;
+        /// <summary>
+        /// Botones con las opciones a ejecutar
+        /// </summary>
+        private static List<ButtonBuilder> _ButtonsBuilder;
 
+        /// <summary>
+        /// Páginado de los botones de opción
+        /// </summary>
         private static int _Page = 0;
 
-        private static readonly string _ArrowLeftMessage = $"{CustomEmotes.GetEmote(EmoteType.LeftArrow)} {CustomMessages.GetMessage(MessagesType.PreviousPage)}";
-
-        private static readonly string _ArrowRightMessage = $"{CustomEmotes.GetEmote(EmoteType.RightArrow)} {CustomMessages.GetMessage(MessagesType.NextPage)}";
-
-        private const string _IdPreviousPage = "previous_page";
-
-        private const string _IdNextPage = "next_page";
-
-        private const int _BlankSpaceForPixelWidth = 11;
-
-        private const int _MaxLongForPixelWidth = 187;
-
+        /// <summary>
+        /// Máximo de botones por página
+        /// </summary>
         private const int _MaxCountForPage = 20;
 
+        /// <summary>
+        /// Id botón página previa
+        /// </summary>
+        private const string _IdPreviousPage = "previous_page";
+
+        /// <summary>
+        /// Id botón página siguiente
+        /// </summary>
+        private const string _IdNextPage = "next_page";
+
+        /// <summary>
+        /// Mensaje página anterior
+        /// </summary>
+        private static readonly string _ArrowLeftMessage = $"{CustomEmotes.GetEmote(EmoteType.LeftArrow)} {CustomMessages.GetMessage(MessagesType.PreviousPage)}";
+
+        /// <summary>
+        /// Mensaje página siguiente
+        /// </summary>
+        private static readonly string _ArrowRightMessage = $"{CustomEmotes.GetEmote(EmoteType.RightArrow)} {CustomMessages.GetMessage(MessagesType.NextPage)}";
+        
         public DiscordService(IPerplexityService perplexityService, IDiscordIntegration discordIntegration)
         {
             _PerplexityService = perplexityService;
             discordIntegration.GetDiscordClient().InteractionCreated += HandleButtonEvent;
         }
 
-        public async Task GetAppsButtons(List<SteamApp> steamApps, SocketCommandContext context, LenguageType lenguage)
+        /// <summary>
+        /// Crea un mensaje de respuesta, paginando los botones de selección de apps y logros
+        /// </summary>
+        /// <param name="context">Contexto de discord para la generación de mensajes</param>
+        /// <param name="buttons">Botones con opciones</param>
+        /// <param name="lenguage">Lenguaje de respuesta para la guía</param>
+        /// <returns>Tarea con ejecucion del emensaje</returns>
+        public async Task CreateMessageResponse(SocketCommandContext context, List<ButtonBuilder> buttons, LenguageType lenguage)
         {
-            InitializeComponentValues(context, lenguage);
+            InitializeComponentValues(buttons, lenguage);
 
-            foreach (SteamApp app in steamApps)
-            {
-                var interactiveButton = new ButtonBuilder()
-                    .WithLabel(GetAppDisplayName(app.Name))
-                    .WithStyle(ButtonStyle.Secondary)
-                    .WithCustomId(GetSerializedId(new DiscordButtonData
-                    {
-                        Id = app.Id,
-                        Name = app.Name
-                    }));
-
-                _ButtonsBuilder.Add(interactiveButton);
-            }
-
-            _AppName = CustomMessages.GetMessage(MessagesType.AppsFound);
-            await CreateUserMessage();
-        }
-
-        public async Task GetAppAchivementsButtons(SteamApp steamApp, SocketCommandContext context, LenguageType lenguage)
-        {
-            InitializeComponentValues(context, lenguage);
-
-            if (steamApp.Achievements != null && steamApp.Achievements.Count > 0)
-            {
-                foreach (SteamAppAchievement appAchievement in steamApp.Achievements.OrderBy(app => !app.Hidden))
-                {
-                    var interactiveButton = new ButtonBuilder()
-                        .WithLabel(GetAppDisplayName(appAchievement.DisplayName, appAchievement.Hidden))
-                        .WithStyle(ButtonStyle.Secondary)
-                        .WithCustomId(GetSerializedId(new DiscordButtonData
-                        {
-                            Id = steamApp.Id,
-                            Name = steamApp.Name,
-                            AchievementName = appAchievement.DisplayName
-                        }));
-
-                    _ButtonsBuilder.Add(interactiveButton);
-                }
-
-                _AppName = CustomMessages.GetMessage(MessagesType.AchievementsFound, steamApp.Name);
-                await CreateUserMessage();
-            }
-        }
-
-        private static void InitializeComponentValues(SocketCommandContext context, LenguageType lenguage)
-        {
-            _Lenguage = lenguage;
-            _Context = context;
-            _ButtonsBuilder = new List<ButtonBuilder>();
-            _AppName = string.Empty;
-            _Page = 0;
-        }
-
-        private static string GetSerializedId<T>(T entity)
-        {
-            return JsonConvert.SerializeObject(entity);
-        }
-
-        private static string GetAppDisplayName(string displayName, bool isHidden = false)
-        {
-            if (!string.IsNullOrEmpty(displayName))
-            {
-                char blankSpace = '\u2800';
-
-                displayName += isHidden ? $" {CustomEmotes.GetEmote(EmoteType.HiddenEye)}" : string.Empty;
-
-                int inputLength = MeasureStringWidth(displayName);
-                int spacesToAdd = _MaxLongForPixelWidth - inputLength;
-
-                if (inputLength >= _MaxLongForPixelWidth || spacesToAdd <= 0)
-                {
-                    return displayName;
-                }
-
-                return displayName + new string(blankSpace, (spacesToAdd / _BlankSpaceForPixelWidth));
-            }
-
-            return displayName;
-        }
-
-        private static async Task CreateUserMessage()
-        {
-            _InstanceUserMessage = await _Context.Channel.SendMessageAsync(_AppName);
+            _InstanceUserMessage = await context.Channel.SendMessageAsync(CustomMessages.GetMessage(MessagesType.AchievementsFound));
 
             await ((IUserMessage)_InstanceUserMessage).ModifyAsync(msg =>
             {
@@ -142,6 +87,23 @@
             });
         }
 
+        /// <summary>
+        /// Inicializa los parámetros requeridos para el proceso de creación de mensajes
+        /// </summary>
+        /// <param name="buttons">Botones de elección del mensaje</param>
+        /// <param name="lenguage">Lenguaje de respuesta para la guía</param>
+        private static void InitializeComponentValues(List<ButtonBuilder> buttons, LenguageType lenguage)
+        {
+            _ButtonsBuilder = buttons;
+            _Lenguage = lenguage;
+            _Page = 0;
+        }
+
+        /// <summary>
+        /// Evento de selección para los botones del mensaje
+        /// </summary>
+        /// <param name="interaction">Evento que se recibe al seleccionar un botón, contiene la información del botón seleccionado</param>
+        /// <returns>Tarea con respuesta del bot</returns>
         private async Task HandleButtonEvent(SocketInteraction interaction)
         {
             if (interaction is not SocketMessageComponent buttonInteraction)
@@ -171,6 +133,10 @@
             await buttonInteraction.RespondAsync();
         }
 
+        /// <summary>
+        /// Retorna un nuevo componente con los botones páginados por menos de la máxima cantidad permitida por Discord (Discord permite un máximo de 25 botones por mensaje)
+        /// </summary>
+        /// <returns>Componente con el mensaje</returns>
         private static ComponentBuilder GetButtonComponents()
         {
             var componentBuilder = new ComponentBuilder();
@@ -189,6 +155,12 @@
             return componentBuilder;
         }
 
+        /// <summary>
+        /// Controla el tipo de opción seleccionada.
+        /// En caso de ser un botón de selección de app ejecuta la búsqueda de guías y en caso de ser un botón de guía llama al servicio de perplexity para generar la guía
+        /// </summary>
+        /// <param name="buttonInteraction">Contiene el evento de interacción con la información del botón seleccionado</param>
+        /// <returns>Tarea con respuesta del bot</returns>
         private static async Task HandleButtonOption(SocketMessageComponent buttonInteraction)
         {
             if (buttonInteraction != null && buttonInteraction.Data.CustomId != null)
@@ -202,7 +174,14 @@
 
                 if (string.IsNullOrEmpty(discordButtonData?.AchievementName))
                 {
-                    await buttonInteraction.RespondAsync($"!game {discordButtonData?.Name}");
+                    if (_Lenguage == LenguageType.Spanish)
+                    {
+                        await buttonInteraction.RespondAsync($"!game-es {discordButtonData?.Name}");
+                    }
+                    else
+                    {
+                        await buttonInteraction.RespondAsync($"!game {discordButtonData?.Name}");
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(discordButtonData?.AchievementName))
@@ -213,18 +192,6 @@
 
                     await buttonInteraction.Channel.SendMessageAsync(guideMessage);
                 }
-            }
-        }
-
-        private static int MeasureStringWidth(string appName)
-        {
-            Font fontSize = SystemFonts.DefaultFont;
-
-            using (var bmp = new Bitmap(1, 1))
-            using (var g = Graphics.FromImage(bmp))
-            {
-                SizeF size = g.MeasureString(appName, fontSize);
-                return (int)size.Width;
             }
         }
     }

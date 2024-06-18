@@ -11,8 +11,14 @@
 
     public class PerplexityIntegration : IPerplexityIntegration
     {
+        /// <summary>
+        /// Configuración de la aplicación
+        /// </summary>
         private static IConfiguration _Configuration;
 
+        /// <summary>
+        /// Lenguaje de consumo a la API
+        /// </summary>
         private static LenguageType _Lenguage = LenguageType.English;
 
         public PerplexityIntegration(IConfiguration configuration)
@@ -20,6 +26,12 @@
             _Configuration = configuration;
         }
 
+        /// <summary>
+        /// Orquesta el consumo a la API de Perplexity para obtener una respuesta de Gpt con acceso a web
+        /// </summary>
+        /// <param name="promptParameters">Parámetros de búsqueda, contienen nombre y logro de la app buscada</param>
+        /// <param name="lenguage">Lenguaje del prompt en el cual se obtendrá la respuesta</param>
+        /// <returns>Respuesta con guía del logro para la app buscada</returns>
         public async Task<string> GetPerplexityChatResponse(string[] promptParameters, LenguageType lenguage)
         {
             _Lenguage = lenguage;
@@ -32,6 +44,11 @@
             return responseData?.choices[0].message.content ?? string.Empty;
         }
 
+        /// <summary>
+        /// Consumo Http a la API de perplexity
+        /// </summary>
+        /// <param name="promptParameters">Parámetros de búsqueda, contienen nombre y logro de la app buscada</param>
+        /// <returns>Respuesta Http de la API</returns>
         private static async Task<HttpResponseMessage> GetGuidePerplexityResponse(string[] promptParameters)
         {
             using var httpClient = new HttpClient();
@@ -51,6 +68,11 @@
             return response;
         }
 
+        /// <summary>
+        /// Obtiene el modelo de consumo de la API con los parámetros de consulta
+        /// </summary>
+        /// <param name="promptParameters">Parámetros de búsqueda, contienen nombre y logro de la app buscada</param>
+        /// <returns>Modelo con parámetros de consulta para la API</returns>
         private static PerplexityModel GetPerplexityModel(string[] promptParameters)
         {
             return new PerplexityModel

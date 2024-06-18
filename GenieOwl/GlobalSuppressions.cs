@@ -5,4 +5,4 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>", Scope = "member", Target = "~M:GenieOwl.Common.Services.DiscordService.MeasureStringWidth(System.String)~System.Int32")]
+[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>", Scope = "member", Target = "~M:GenieOwl.Common.Services.SteamService.MeasureStringWidth(System.String)~System.Int32")]

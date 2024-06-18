@@ -1,5 +1,6 @@
 ﻿namespace GenieOwl.Common.Commands
 {
+    using Discord;
     using Discord.Commands;
     using GenieOwl.Common.Interfaces;
     using GenieOwl.Integrations.Entities;
@@ -7,13 +8,13 @@
     using GenieOwl.Utilities.Types;
     using Microsoft.Extensions.Configuration;
 
-    public class SteamAppCommand : ModuleBase<SocketCommandContext>
+    public class GuideAchivementCommand : ModuleBase<SocketCommandContext>
     {
         private readonly IDiscordService _DiscordService;
 
         private readonly ISteamService _SteamService;
 
-        public SteamAppCommand(IConfiguration configuration, ISteamService steamService, IDiscordService discordService)
+        public GuideAchivementCommand(IConfiguration configuration, ISteamService steamService, IDiscordService discordService)
         {
             this._SteamService = steamService;
             this._DiscordService = discordService;
@@ -72,15 +73,11 @@
 
             try
             {
-                List<SteamApp> appsResult = this._SteamService.GetSteamAppsByMatches(gameName, this.Context.Message.Author.IsBot);
+                List<ButtonBuilder> appsButtonsResult = this._SteamService.GetSteamAppsByMatches(gameName, this.Context.Message.Author.IsBot);
 
-                if (appsResult.Count == 1)
+                if (appsButtonsResult != null)
                 {
-                    await this._DiscordService.GetAppAchivementsButtons(appsResult.FirstOrDefault(), this.Context, lenguage);
-                }
-                else
-                {
-                    await this._DiscordService.GetAppsButtons(appsResult, this.Context, lenguage);
+                    await this._DiscordService.CreateMessageResponse(this.Context, appsButtonsResult, lenguage);
                 }
             }
             catch (Exception ex)

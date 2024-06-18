@@ -10,7 +10,7 @@
             { MessagesType.AppNotFound, "Game couldn't not be found. :rage: \n You can try search again! :innocent:" },
             { MessagesType.AppNotAchivement, "Game achivements couldn't not be found for app {0}. :rage:" },
             { MessagesType.AppsFound, "Could you be looking for any of these? :thinking_face:" },
-            { MessagesType.AchievementsFound, "I found the following achievements for the game {0}" },
+            { MessagesType.AchievementsFound, "I found the following achievements for the game" },
             { MessagesType.GenericError, "An error occurred, please report the bug on the GenieOwl forum. :slightly_smiling_face: \b _{0}_" },
             { MessagesType.GetMomment,  "Give me a momment... :face_with_monocle:" },
             { MessagesType.HelpGameCommand, "You could use: !game <game name>" },

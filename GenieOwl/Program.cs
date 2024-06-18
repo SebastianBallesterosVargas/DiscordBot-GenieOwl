@@ -17,7 +17,7 @@
         {
             var configuration = new ConfigurationBuilder()
                 .AddUserSecrets(Assembly.GetExecutingAssembly())
-                .AddJsonFile("C:\\Users\\sebas\\source\\repos\\GenieOwl\\GenieOwl\\appsettings.json", optional: false)
+                .AddJsonFile("[Your appsettings.json route]", optional: false)
                 .Build();
 
             var serviceProvider = new ServiceCollection()
