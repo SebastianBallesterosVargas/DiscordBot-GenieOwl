@@ -74,12 +74,13 @@
         /// <param name="context">Contexto de discord para la generación de mensajes</param>
         /// <param name="buttons">Botones con opciones</param>
         /// <param name="lenguage">Lenguaje de respuesta para la guía</param>
+        /// <param name="isBotMessage">Indica si el mensaje es del bot o un usuario</param>
         /// <returns>Tarea con ejecucion del emensaje</returns>
-        public async Task CreateMessageResponse(SocketCommandContext context, List<ButtonBuilder> buttons, LenguageType lenguage)
+        public async Task CreateMessageResponse(SocketCommandContext context, List<ButtonBuilder> buttons, LenguageType lenguage, bool isBotMessage)
         {
             InitializeComponentValues(buttons, lenguage);
 
-            _InstanceUserMessage = await context.Channel.SendMessageAsync(CustomMessages.GetMessage(MessagesType.AchievementsFound));
+            _InstanceUserMessage = await context.Channel.SendMessageAsync(CustomMessages.GetMessage(isBotMessage ? MessagesType.AchievementsFound : MessagesType.AppsFound));
 
             await ((IUserMessage)_InstanceUserMessage).ModifyAsync(msg =>
             {

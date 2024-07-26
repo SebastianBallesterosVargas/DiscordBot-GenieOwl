@@ -73,11 +73,13 @@
 
             try
             {
-                List<ButtonBuilder> appsButtonsResult = this._SteamService.GetSteamAppsByMatches(gameName, this.Context.Message.Author.IsBot);
+                bool isBotMessage = this.Context.Message.Author.IsBot;
+
+                List<ButtonBuilder> appsButtonsResult = this._SteamService.GetSteamAppsByMatches(gameName, isBotMessage);
 
                 if (appsButtonsResult != null)
                 {
-                    await this._DiscordService.CreateMessageResponse(this.Context, appsButtonsResult, lenguage);
+                    await this._DiscordService.CreateMessageResponse(this.Context, appsButtonsResult, lenguage, isBotMessage);
                 }
             }
             catch (Exception ex)

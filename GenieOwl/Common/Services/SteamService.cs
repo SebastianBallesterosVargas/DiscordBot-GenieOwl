@@ -54,19 +54,19 @@
         /// <returns>Aplicaciones de Steam</returns>
         public List<ButtonBuilder> GetSteamAppsByMatches(string appName, bool isBotMessage)
         {
-            List<SteamApp> appsMatches = GetAppsMatchesByAppName(appName, _SteamApps, isBotMessage);
-            if (appsMatches.Count == 1)
-                return GetAppAchivementsButtons(appsMatches.FirstOrDefault());
-
-            if (appsMatches.Count > 1)
-                return GetAppsButtons(appsMatches);
-
             List<SteamApp> appsDlcsMatches = GetAppsMatchesByAppName(appName, _SteamAppsWithDlcs, isBotMessage);
             if (appsDlcsMatches.Count == 1)
                 return GetAppAchivementsButtons(appsDlcsMatches.FirstOrDefault());
 
             if (appsDlcsMatches.Count > 1)
                 return GetAppsButtons(appsDlcsMatches);
+
+            List<SteamApp> appsMatches = GetAppsMatchesByAppName(appName, _SteamApps, isBotMessage);
+            if (appsMatches.Count == 1)
+                return GetAppAchivementsButtons(appsMatches.FirstOrDefault());
+
+            if (appsMatches.Count > 1)
+                return GetAppsButtons(appsMatches);
 
             throw CustomMessages.ResponseMessageEx(MessagesType.AppNotFound);
         }
@@ -152,7 +152,7 @@
             {
                 string cleanedAppName = Regex.Replace(appName.ToLower(), @"[':;.,_®@-]", "");
 
-                return steamApps.Select(app => new
+                List<SteamApp> appsMatches = steamApps.Select(app => new
                 {
                     SteamApp = app,
                     Matches = Regex.Matches(Regex.Replace(app.Name?.ToLower(), @"[':;.,_®@-]", ""), $@"\b{Regex.Escape(cleanedAppName)}\b").Count
@@ -161,6 +161,10 @@
                 .OrderByDescending(x => x.Matches)
                 .Select(x => x.SteamApp)
                 .ToList();
+
+                return appsMatches.GroupBy(app => app.Id)
+                  .Select(id => id.First())
+                  .ToList();
             }
         }
 
